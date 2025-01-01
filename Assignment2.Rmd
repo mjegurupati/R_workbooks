@@ -1,0 +1,330 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+#Installing packages --> Tidyverse and ggplot2
+```{r}
+install.packages("tidyverse")
+```
+```{r}
+install.packages("ggplot2")
+```
+#Checking whether the libraries are installed.
+```{r}
+library(tidyverse)
+```
+```{r}
+library(ggplot2)
+```
+#Uploading the dataset
+
+```{r}
+data <-read.csv("demographic.csv")
+```
+#Viewing the data
+```{r}
+View(data)
+```
+#printing the first rows to analyse the structure
+```{r}
+head(data,n=6)
+```
+#summary of the data
+```{r}
+summary(data)
+```
+Observation:
+Marital status,Gender has lot of missing values which would rise data quality issues.
+#2.a Data Cleaning and Transformations
+```{r}
+ sum(is.na(data))
+```
+Out of 10565 rows there are 1548 rows having missing values.
+
+```{r}
+data= na.omit(data)
+```
+
+```{r}
+ sum(is.na(data))
+```
+```{r}
+nrow(data)
+```
+Before the number of rows in dataset are 10565, but now after removing rows with missing values the row count decreased to 9044.
+```{r}
+View(data)
+```
+
+
+#Handling outliers of the DemoGraphicDataSet
+
+```{r}
+install.packages("reshape2")
+```
+```{r}
+library(reshape2)
+library(ggplot2)
+```
+#Made error over :)
+```{r}
+mdata  <-  melt(data,  id.vars='age',
+measure.vars=c('age', 'home_build_year', 'credit_score'))
+ggplot(mdata) +
+geom_boxplot(aes(x=age,  y=value,  color=variable))
+```
+```{r}
+View(data)
+```
+
+we can observe outliers in age column from graph
+#Using boxploting visulization
+```{r}
+ggplot(data)+aes(x="",  y=age)+geom_boxplot(fill="blue")
+```
+# Finding the rows of outliers in age column
+```{r}
+outliers = boxplot.stats(data$age)$out
+outliers_ind = which(data$age %in% c(outliers))
+data[outliers_ind,]
+```
+#Removing outliers with Inter Quartile Range Method
+
+```{r}
+P1<- quantile(data$age, 0.25) 
+P2 <- quantile(data$age, 0.75) 
+IQR_age <- P2 - P1
+```
+
+#getting lower and upper limits for outliers
+```{r}
+lower_limit <- P1 - 1.5 * IQR_age 
+upper_limit <- P2 + 1.5 * IQR_age
+```
+#Removing outliers using filter
+```{r}
+data <- data %>% filter(age >= lower_limit & age <= upper_limit)
+```
+#Using boxplot
+```{r}
+ggplot(data)+aes(x="",  y=age)+geom_boxplot(fill="blue")
+```
+Hence, there are no outliers in this age column.
+#Using the filter function:
+
+1.The filter function enables users to organize data according to the requirement.
+2.Here the filter function allows us to analyse the persons who have low/average/excellent credit score. Data can be organized according to specific age groups, gender and occupation groups.
+3.Also, the filter function can be used with "or" , "and" operator to gain deeper insights into the data.
+
+#Generation of new variables
+
+```{r}
+data <- data %>% 
+  mutate(age_group = cut(age, breaks = c(0, 20, 30, 40, 50, 60, Inf),
+labels = c("0-20", "21-30", "31-40", "41-50", "51-60", "61+")))
+```
+
+```{r}
+head(data,n=10)
+```
+
+```{r}
+view(data)
+```
+
+```{r}
+data %>%
+  mutate(credit_score_rating = cut(credit_score, breaks = c(300, 550, 650, 750, 800, 850), labels = c("poor", "fair", "good", "very good", "excellent")))
+```
+
+```{r}
+head(data,n=10)
+```
+Assumptions:
+1.First assumption I have made is that we have age group variable in which age ranges are relevant and divide the population properly for our analysis.
+
+2.Second assumption is that we have credit score rating variable in which credit score ranges are relevant and provide credit worthiness of individuals.
+
+# 3.a Using summarize function
+
+```{r}
+data %>% 
+  summarize(
+    cred_mean = mean(credit_score, na.rm= TRUE)
+  )
+```
+#using group_by along with summarize fn.
+```{r}
+data %>% 
+  group_by(age) %>% 
+  summarize(
+    cred_mean = mean(credit_score, na.rm= TRUE)
+  )
+```
+Here the group_by function is used to gather insights of data of persons who manage to have good credit score i.e greater than 750. With this information we can analyse what occupation they are into, how early they have built their home, which area are they from and which gender/age group they belong too.
+
+```{r}
+data %>% 
+  summarize(
+mean_age = mean(age), 
+median_age = median(age), 
+min_age = min(age), 
+max_age = max(age),
+mean_credit_score = mean(credit_score),
+min_credit_score = min(credit_score),
+max_credit_score = max(credit_score),
+median_credit_score = median(credit_score),
+mean_home_build_year = mean(home_build_year), 
+median_home_build_year = median(home_build_year), 
+min_home_build_year = min(home_build_year),
+max_home_build_year = max(home_build_year),
+)
+```
+Using the summarize function:
+
+The summarize function is used to calculate mean,median,standard deviation, Minimum and Maximum values without writing redundant code.
+
+```{r}
+data %>%
+  mutate(ExcellentCredit = ifelse(credit_score >= 700, "Yes", "No"))
+```
+#Aggregating variables
+```{r}
+data%>% 
+  group_by(gender) %>% 
+  summarise(
+mean_age = mean(age),
+median_age = median(age),
+mean_credit_score = mean(credit_score), 
+median_credit_score = median(credit_score)
+)
+```
+
+```{r}
+data %>% 
+  group_by(education) %>% 
+  summarise(
+mean_age = mean(age), 
+median_age = median(age),
+mean_credit_score = mean(credit_score),
+median_credit_score = median(credit_score),
+)
+```
+#Summary:
+The average age of female is 46 and average age of male is 52 years. The average creditscore is almost same for both female and male.
+
+1.From the above, in the distribution of degrees there are huge number of people who have completed their study in some college and the 2nd highest is HS diploma.
+
+2.Individuals with a HS Diploma have the lowest mean credit score, while those with a Grad Degree have the highest mean credit score. Therefore people with higher degree have higher credit score.
+
+#4.a,b,c Leveraging data analysis
+
+Drawing ggplot graphs to visualize the data
+Graphs-1
+# Education Count
+```{r}
+ggplot(data = data, aes(x = education)) +
+  geom_bar() +
+  labs(x = "Education", y = "Count") +
+  ggtitle("Distribution of degrees")
+```
+1.From the 1st graph in the distribution of degrees there are huge number of people who have completed their study in some college and the 2nd highest is HS diploma.
+
+2.There are less number of people who completed their graduation degree.
+
+```{r}
+ggplot(data = data, aes(x = marital_status,fill=gender)) +
+  geom_bar() +
+  labs(x = "Marital Status", y = "Count") +
+  ggtitle("Distribution of Marital Status")
+```
+In distribution of Marital status we can observe that huge number of people in this data are "Married".
+Also, the count of married female persons is greater than that of Male.
+
+#Summarising basic analysis for co-relation
+Graph 1
+```{r}
+ggplot(data = data, aes(x = occupation_group, fill =gender)) +
+  geom_bar() +
+  labs(x = "occupational_status", y = "Count") +
+ggtitle("Distribution of Occupation and gender")
+```
+1. I have chosen Stacked bar plot for Occupation status vs gender count.This shows clear variation of people in different occupations
+2.In the distribution of occupation graph we can observe that there are greater number of people in "Blue Collar".Also a greater proportion of the people are Retired.The least number of people are Farmers.
+3.Overall the female count is higher than that of the male in all occupations.
+4.This graph summarizes that higher count of females in occupations and supports our calculations.
+
+Graph 2
+```{r}
+ggplot(data= data,aes(x= occupation_group, y= credit_score))+
+  geom_boxplot(fill = "lightpink")+
+  labs(x = "Occupation", y = "Credit_score") +
+ggtitle("Distribution of Credit score across various occupation groups")
+```
+1. I have chosen box plot for Occupation vs Credit score.
+2.In the box plot of distribution of credit score across various occupation groups-The farmers have a higher credit score range varying from 450 to 750.
+3.Overall we can analyse that higher education also promtes good credit score maintenance
+4.The box plot supports our overall summarization.
+
+```{r}
+ggplot(data, aes(x = education, y = credit_score, fill = education)) + geom_bar(stat = "summary", fun.y = "mean") +
+labs(
+title = "Credit Score by Education Level", x = "Education Level",
+y = "Mean Credit Score"
+) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+1. I have chosen bar graph to easily differentiate data for analysis.
+2.The above bar plot illustrates that Grad Degree have highest credit score followed by Bachelor Degree. Individuals with less than HS diploma have low credit score.
+3.The overall patterns observed in the above graph are Higher education and credit score are positively related that is individuals with higher education have higher credit scores.
+4.This bar plot shows our summarization is relevant.
+
+Graph4
+```{r}
+library(ggplot2)
+ggplot(data, aes(x = age, y = credit_score))+
+geom_hex()+
+labs(
+title = "Age and Credit Score (Hexbin Plot)", x = "Age",
+y = "Credit Score"
+)+
+theme_minimal()
+
+```
+1. I have chosen Hexbin plot for Age and credit score
+2.The above hex bin plot illustrates that older individuals have slightly higher credit scores. The hexagonal bins are color-coded to represent the density of data points while the darker areas indicating higher data density. 
+3.The hexbin plot shows that the relationship age and credit score is positive but not that co-relative.
+4.This hexbin plot shows our summarization is similar that older individuals have high credit score.
+
+Overall summary(big picture):
+The relation between age and credit score is not that strong while individuals having higher education have high credit score.The distribution of occupation and credit score have showed that farmers have wide range of credit score.Atlast we discovered that females count higher in almost every occupation.
+
+#5 Results
+Interesting Insights - 
+The data shows that education is related to credit scores, indicating the importance of education in getting financially stable and independent. The age distribution is normal,this can help in age specific marketing strategies. 
+
+It is derived that marital status and education level have a strong relationship. High education level individuals are likely married, this could help in married couples specific marketing strategies.
+
+This would help in marketing based on education levels of the individuals could be a effective way. Specific campaigns can be organised age group specific.
+
+As a result of this data analysis, important patterns and insights that can influence marketing, financial planning, and service personalization have been uncovered. Organisations can use the useful information gleaned from this analysis to make data-driven decisions and better serve their target market.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
