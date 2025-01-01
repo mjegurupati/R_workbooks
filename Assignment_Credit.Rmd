@@ -1,0 +1,297 @@
+---
+title: "R Notebook for Creditdata Analysis "
+---
+
+#1 Installing required packages
+```{r}
+# Install tidyverse
+install.packages("tidyverse")
+```
+
+```{r}
+# Install ISLR
+install.packages("ISLR")
+```
+```{r}
+install.packages("caret")
+```
+
+```{r}
+# Load libraries
+library(tidyverse)
+library(ISLR)
+```
+```{r}
+data("Credit")
+```
+
+```{r}
+head(Credit,n=10)
+```
+
+```{r}
+summary(Credit)
+```
+#1.a. Drop ID column
+```{r}
+# Load the tidyverse package
+library(tidyverse)
+
+# Drop the "ID" column using dplyr
+Credit <- Credit %>% select(-ID)
+```
+
+```{r}
+head(Credit,n=10)
+```
+#Data Cleaning
+```{r}
+sum(is.na(Credit))
+```
+There are no null values in this data
+
+# Handling Outliers
+```{r}
+boxplot(Credit$Income,Credit$Limit,Credit$Rating,Credit$Cards,Credit$Age,Credit$Education,Credit$Balance)
+```
+As we can see there are outliers in this data
+```{r}
+iqr_inc <- IQR(Credit$Income)
+iqr_limit <- IQR(Credit$Limit)
+iqr_rating <- IQR(Credit$Rating)
+iqr_cards <- IQR(Credit$Cards)
+```
+
+```{r}
+# Calculate upper and lower bounds for each column
+upper_inc<- quantile(Credit$Income, 0.75) + 1.5 * iqr_inc
+lower_inc<- quantile(Credit$Income, 0.25) - 1.5 * iqr_inc
+upper_rating<- quantile(Credit$Rating, 0.75) + 1.5 * iqr_rating
+lower_rating<- quantile(Credit$Rating, 0.25) - 1.5 * iqr_rating
+upper_limit<- quantile(Credit$Limit, 0.75) + 1.5 * iqr_limit
+lower_limit<- quantile(Credit$Limit, 0.25) - 1.5 * iqr_limit
+upper_cards<- quantile(Credit$Cards, 0.75) + 1.5 * iqr_cards
+lower_cards<- quantile(Credit$Cards, 0.25) - 1.5 * iqr_cards
+```
+
+
+
+
+
+
+```{r}
+# Remove outliers in each column
+Credit <- Credit[Credit$Income >= lower_inc & Credit$Income <= upper_inc &
+          Credit$Rating>= lower_rating & Credit$Rating <= upper_rating &
+          Credit$Limit >= lower_limit &  Credit$Limit <= upper_limit &
+          Credit$Cards>= lower_cards &  Credit$Cards <= upper_cards,]
+```
+
+```{r}
+boxplot(Credit$Income,Credit$Limit,Credit$Rating,Credit$Cards,Credit$Age,Credit$Education,Credit$Balance)
+```
+Now Outliers are removed so we can perform data manipulation techniques.
+```{r}
+#1.b.
+# Task 1: Fit a multiple linear regression model
+credit_lm <- lm(Balance ~ ., data = Credit)
+summary(credit_lm)
+```
+#1.c.
+According to the Summary for feature selection and to examine the linearity we need to consider both the P values as well as coefficients.
+The features that have non zero coefficients and those that have significantly low p value show linearity with the target variable.
+
+Income: The coefficient is -8.13271 and the p-value is < 2e-16, this shows significant negative relationship with the response variable.
+
+Limit: The estimate coefficient is 0.18219 and the p-value is 2.28e-0,shows significant positive relationship with the response variable.
+
+Rating: The estimate coefficient is 1.19835 and the p-value is 0.020830 shows a significant positive relationship with the response variable.
+
+Cards: The estimate coefficient is 16.69808 and the p-value is 0.000457 shows a positive relationship with the response variable.
+
+Student: The estimate coefficient is 425.68977 and the p-value is < 2e-16 indicating a significant positive relationship with the response variable.
+
+The selected features are:
+1. Income
+2. Limit
+3. Rating
+4. Cards
+5. Student
+
+```{r}
+# Scatter plot
+ggplot(Credit, aes(x = Limit, y = Balance)) +
+  geom_point() +
+  labs(
+    x = "Limit",
+    y = "Balance"
+  )
+```
+#Selecting Features
+```{r}
+selected_features <- c("Income", "Limit", "Rating","Cards","Student")
+```
+
+#Linear Regression model
+```{r}
+library(caret)
+set.seed(123)
+split_data <- createDataPartition(Credit$Balance, p = 0.7, list = FALSE)
+train_data <- Credit[split_data, ]
+test_data <- Credit[-split_data, ]
+```
+
+```{r}
+model <- lm(Balance ~ ., data = train_data[, c("Balance", selected_features)])
+```
+
+```{r}
+summary(model)
+```
+```{r}
+predicted_values <- predict(model, newdata = test_data)
+```
+
+```{r}
+rmse <- sqrt(mean((predicted_values - test_data$Balance)^2))
+
+r_squared <- 1 - sum((predicted_values - test_data$Balance)^2) / sum((test_data$Balance - mean(test_data$Balance))^2)
+cat("Model Performance: RMSE =", rmse, "R-squared =", r_squared, "\n")
+```
+#1.d.
+For a model to be better fitting linear regression model it should have a low RMSE value and a greater R_squared value. This shows the model predictions are close to the actual values.
+Here the R_ squared value ranges from 0 to 1
+O means the model doesn't explain variability
+1 means the model explains variability well.
+As there is 0.93 which means 93% the model explains variability of data well.
+It also has Low RMSE comparitively.
+
+```{r}
+ggplot() +
+  geom_point(data = test_data, aes(x = Limit, y = Balance), color = "blue") +
+  geom_line(data = test_data, aes(x = Limit, y = Balance), color = "red") +
+  xlab("Limit") +
+  ylab("Balance") +
+  ggtitle("Linear Regression: Model Prediction vs. Actual")
+```
+```{r}
+ggplot(test_data, aes(x = Balance, y = predicted_values)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(x = "Actual Energy Usage (kWh)", y = "Predicted Energy Usage (kWh)") +
+  ggtitle("Model Performance")
+
+
+plot(model)
+
+```
+
+These visualizations show that the model performs well with the given selected features response on the Target variable.
+
+```{r}
+#2.a Creating the new_data dataframe
+new_data <- data.frame(
+  Income = 50000,
+  Limit = 5000,
+  Rating = 700,
+  Cards = 5,
+  Age = 30,
+  Education = 15,
+  Gender = factor("Female", levels = c("Male", "Female")),
+  Student = factor("Yes", levels = c("No", "Yes")),
+  Married = factor("No", levels = c("No", "Yes")),
+  Ethnicity = factor("Caucasian", levels = c("Asian", "Caucasian"))
+)
+```
+
+
+```{r}
+# Display the modified new_data dataframe
+new_data
+```
+```{r}
+model <- lm(Balance ~ ., data = Credit)
+summary(model)
+```
+
+```{r}
+predicted_values <- predict(model, newdata = new_data, interval = "prediction", level = 0.95)
+```
+
+```{r}
+mean_predicted_balance <- predicted_values[,"fit"]
+```
+
+```{r}
+result <- data.frame(Mean = mean_predicted_balance)
+result
+```
+#2.b.
+The mean predicted credit card balance for this customer is 404859.5.
+
+#2.c.
+Based on the model output from question 1, the mean predicted credit card balance to the customer’s income is inversely proportional .
+If the coefficient is negative, it suggests that as income increases, the predicted credit card balance tends to decrease, and vice versa. If it's positive, it indicates an increase in predicted balance with an increase in income.
+
+```{r}
+# Fit logistic regression model
+logistic_model <- glm(Married ~ ., data = Credit, family = "binomial")
+```
+
+```{r}
+# Print model summary
+summary(logistic_model)
+```
+
+#3.a Based on this output:
+
+The features "Rating" and "EthnicityAsian" have significant coefficients and are likely related to the probability of being married.(also indicated by stars).
+
+From the provided output, the features that make an impact and thus related to the response (Married) are:
+
+Rating: The coefficient estimate is 0.0244064, and it has a p-value of 0.0297.
+
+EthnicityAsian: The coefficient estimate is 0.7065517, and it has a p-value of 0.0248.
+
+These features have p-values less than the level of 0.05 which shows a higher probability of being married.
+
+#3.b.
+The model appears to fit the training data better than the null model.For example
+
+*Null Deviance:* The null deviance represents the deviance of the model with no predictors. Here, the null deviance is 491.73.
+
+*Residual Deviance:* The residual deviance represents the deviance of the model with predictors. Here, the residual deviance is 474.38.
+
+If no improvement over the null model, the residual deviance would be similar to the null deviance. However, since the residual deviance is lower than the null deviance, it indicates that the model with predictors is doing well. This explains the variation in the response variable than the null model.
+
+Therefore, the logistic regression model fits the training data better than the null model.
+
+```{r}
+predicted_classes <- predict(logistic_model, newdata = train_data, type = "response")
+predicted_classes <- ifelse(predicted_classes > 0.5, 1, 0)
+```
+
+```{r}
+# Create a confusion matrix
+conf_matrix <- table(Actual = train_data$Married, Predicted = predicted_classes)
+```
+
+```{r}
+print(conf_matrix)
+```
+True Positive (TP): 136 cases are correct, predicted as "Yes" (Married).
+True Negative (TN): 24 cases are correct, predicted as "No" (Not Married).
+False Positive (FP): 80 cases are incorrect ,predicted as "Yes" (Married).
+False Negative (FN): 20 cases are incorrect, predicted as "No" (Not Married).
+Hence the model doesn't produce balanced classifications.
+
+```{r}
+# Calculate training accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Training Accuracy:", accuracy, "\n")
+```
+
+#4.c
+Hence the accuracy is 61.5%.This means that the model correctly predicts the marital status for about 61.5% right among the observations in the training data.
+We can see that the number of True positives are 136 where as True negative is 24 only.A balanced classification would have similar counts for TP and TN.
+Hence from the confusion matrix we can find that the model is moderately accurate.
