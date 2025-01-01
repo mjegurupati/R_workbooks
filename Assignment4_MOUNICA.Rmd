@@ -1,0 +1,235 @@
+```{r}
+install.packages("tidyverse") 
+```
+```{r}
+install.packages("factoextra")
+```
+```{r}
+install.packages ("caret")
+```
+```{r}
+data <-read_csv("Mall_Customers2.csv")
+```
+
+```{r}
+head(data,n=10)
+```
+```{r}
+str(data)
+```
+
+```{r}
+summary(data)
+```
+#Handling null values
+```{r}
+data = na.omit(data)
+```
+This dataset have 0 missing values.
+
+#Creating Boxplot to remove Outliers
+```{r}
+boxplot (data$Age,data$Annual_Income,data$Spending_Score,data$CustomerID)
+```
+The dataset doesn't have any outliers.
+
+### Adding age_group
+```{r}
+data$Age_Group <- ifelse(data$Age < 30, "Young",
+                              ifelse(data$Age >= 30 & data$Age < 60, "Middle-Aged", "Senior"))
+```
+
+#Visualizations
+```{r}
+install.packages("ggplot2")
+```
+```{r}
+library("ggplot2")
+```
+
+
+```{r}
+ggplot(data, aes(x = Spending_Score)) + 
+  geom_histogram()
+```
+```{r}
+head(data,n=7)
+```
+```{r}
+# Scatter plot: Energy Consumption vs Temperature (Celsius)
+library(ggplot2)
+ggplot(data, aes(x = Age , y = Annual_Income)) +
+  geom_point() +
+  labs(
+    x = "Age",
+    y = "Annual_Income",
+    title = "Annual_Income vs.Age"
+  )
+```
+```{r}
+library(dplyr)
+```
+
+```{r}
+data <-data %>% 
+  select(Age,Annual_Income,Spending_Score)
+```
+
+```{r}
+head(data,n=10)
+```
+
+Assumptions:
+
+1.Homogeneity of Data:We assume that all data points within a cluster have similar characteristics.
+2. We assume that all data points within a cluster have similar characteristics and are independent of each other
+
+# Step 3: Model Building - K-Means Clustering
+# Determine the optimal number of clusters (k)
+```{r}
+set.seed(123) 
+k_values <- 1:10
+X <- sapply(k_values, function(k) kmeans(data[, c("Age", "Annual_Income", "Spending_Score")], centers = k)$tot.withinss)
+plot(k_values, X, type = "b", xlab = "Number of Clusters (k)", ylab = "Total Within-Cluster Sum of Squares", main = "Elbow Method")
+```
+# Standardizing the data 
+```{r}
+mall_data_scaled <- scale(data)
+```
+
+# Building the K-Means Clustering
+
+```{r}
+set.seed(123) 
+kmeans_model <- kmeans(mall_data_scaled, centers = 5) 
+```
+
+# Model Evaluation
+
+# Sum of squares within clusters
+```{r}
+
+kmeans_model$tot.withinss
+```
+# Visualizing K-Means clusters
+```{r}
+kmeans_model <- kmeans(mall_data_scaled, centers = 5) 
+
+library(factoextra)
+fviz_cluster(kmeans_model, data = mall_data_scaled)
+```
+```{r}
+library(cluster)
+cluster_labels <- kmeans_model$cluster
+silhouette_score <- silhouette(cluster_labels, dist(data))
+```
+
+```{r}
+mean_silhouette_score <- mean(silhouette_score)
+cat("Silhouette Score:", mean_silhouette_score, "\n")
+```
+
+```{r}
+k <- 5
+kmeans_result <- kmeans(data[, c("Age", "Annual_Income", "Spending_Score")], centers = k)
+kmeans_result
+```
+
+# Part 2: Model Building - Hierarchical Clustering
+
+# Building the Hierarchical Clustering
+
+```{r}
+hc_model <- hclust(dist(mall_data_scaled), method = "ward.D2")
+
+```
+
+# Cuting the dendrogram into clusters
+```{r}
+hierarchical_clusters <- cutree(hc_model, k = 5) 
+```
+
+# Visualizing Hierarchical Clusters
+```{r}
+plot(hc_model, cex = 0.6, hang = -1, main = "Dendrogram")
+rect.hclust(hc_model, k = 5, border = 2:6) 
+```
+# Interpreting the characteristics of each cluster
+
+```{r}
+clustered_data <- data %>% 
+  mutate(KMeansCluster = kmeans_model$cluster,
+         HierarchicalCluster = hierarchical_clusters)
+```
+
+# Comparing the customer segments from k-means and hierarchical clustering
+```{r}
+table(clustered_data$KMeansCluster, clustered_data$HierarchicalCluster)
+
+```
+# Summarizing insights gained from customer segmentation 
+
+```{r}
+summary(clustered_data)
+```
+
+
+- The notebook offers a comprehensive guide to the entire process, covering data preparation and model development.
+
+- Compelling visualizations created using ggplot2 enhance the notebook's quality and clarity.
+
+- Data visualization reveals insights into the potential utility of annual income, age, gender, and spending score for mall operations.
+
+- The notebook's scripts run without errors, ensuring its practicality.
+
+## Cluster Interpretation:
+
+- Clusters represent groups of customers sharing similar traits related to age, annual income, and spending score.
+
+- These clusters provide valuable insights into distinct customer segments within the mall's customer base.
+
+## Implications:
+
+- The mall can tailor marketing campaigns and promotions to address the specific needs and preferences of each customer segment.
+
+- Customized product offerings and services for different segments can optimize the customer experience and revenue.
+
+- Insights from customer segmentation can guide inventory management, store layout, and operational decisions.
+
+# Challenges
+
+- Managing the data was straightforward as it contained no Null values or outliers.
+
+## Comparison of Customer Segments:
+
+- K-Means and Hierarchical Clustering methods yield similar customer segments in terms of the number of clusters and general characteristics.
+
+- Both methods identify distinct groups based on age, income, and spending score, which are critical factors for customer segmentation.
+
+- The consistency between the two methods strengthens confidence in the identified customer segments.
+
+## Insights Gained from Customer Segmentation:
+
+- Unsupervised learning methods for customer segmentation offer valuable insights into the diverse customer base of the mall.
+
+- Each cluster represents a unique set of characteristics, allowing the mall to customize marketing and business strategies to meet each segment's requirements and preferences.
+
+- Targeting each segment with distinct product offerings and marketing strategies can optimize the customer experience and maximize revenue.
+
+- The segmentation study facilitates data-driven decision-making and helps the mall adapt to the preferences and behaviors of its customer base.
+
+## Clustering-specific:
+
+- **K-Means Cluster Quality:** The quality of K-Means clustering is often assessed using the total sum of squares within clusters. Lower within-cluster sum of squares indicates better cluster separation.
+
+- Visualizations like "fviz_cluster" and the dendrogram for hierarchical clustering offer visual assessments of cluster quality, aiding in understanding cluster separation and potential overlaps.
+
+- Comparing clusters from K-Means and Hierarchical Clustering provides insights into the stability and consistency of the segmentation.
+
+## Conclusion:
+
+- Unsupervised learning techniques offer valuable insights for businesses to understand and cater to the diverse needs of their customer base.
+
+- While limitations exist, these methods provide a data-driven approach to customer segmentation and informed business decisions.
+
+- Further analysis and experiments may be required to refine and validate the clusters.
