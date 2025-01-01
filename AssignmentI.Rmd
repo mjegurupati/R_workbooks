@@ -1,0 +1,341 @@
+---
+title: "R Notebook_Palmer-Penguins"
+output: html_notebook
+---
+#1.a INSTALLING THE BASIC PACKAGES tidyverse, ggplot2 and skimr packages 
+
+```{r}
+install.packages("tidyverse")
+```
+```{r}
+install.packages("skimr")
+```
+```{r}
+install.packages("ggplot2")
+```
+```{r}
+library(readr)
+```
+# 2.a Loading the palmer penguins dataset
+```{r}
+penguins <- read.csv("palmerpenguins.csv")
+```
+
+# 2.b Displaying and summarizing the dataset for reference.
+
+```{r}
+View(penguins)
+```
+#View the first few rows and columns to examine structure
+```{r}
+head(penguins,n=7)
+```
+#To analyse the missing values previously
+```{r}
+summary(penguins)
+```
+# 2.c DESCRIPTION OF VARIABLES 
+
+The variables in the palmer penguin data-set are:
+1. species           : Penguin species are Adelie, Gentoo and Chinstrap
+2. flipper_length_mm : Flipper length in mm
+3. bill_length_mm    : Bill length in mm
+4. bill_depth_mm     : Bill depth in mm
+5. body_mass_g       : Body mass in grams
+
+# 3.a DATA SUMMARIZATION
+Calculation of Mean, Median, standard deviation, Minimum and Maximum
+```{r}
+library(tidyverse)
+penguins %>% 
+summarize(flipper.mean = mean(flipper_length_mm, na.rm = TRUE))
+```
+```{r}
+penguins %>%
+summarize(flipper.median = median(flipper_length_mm, na.rm = TRUE))
+```
+#else it can be done this way
+
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(flipper_length_mm > 0) %>%
+  summarize(across(flipper_length_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(bill_length_mm > 0) %>%
+  summarize(across(bill_length_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(bill_depth_mm > 0) %>%
+  summarize(across(bill_depth_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(body_mass_g > 0) %>%
+  summarize(across(body_mass_g, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+On an average, among all the species the average for Flipper_length is 200.9,Bill_length is 43.9,Bill_depth is 17.1 and Body_mass is 4201.
+
+The MAX value for Flipper_length  : 231 
+                  Bill_depth      : 60
+                  Bill_length     : 21
+                  Body_mass_g     : 6300
+                  
+The MIN value for Flipper_length  : 172
+                  Bill_depth      : 32
+                  Bill_length     : 13
+                  Body_mass_g     : 2700
+
+# 3b Grouping by species
+
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(flipper_length_mm > 0) %>%
+  group_by(species) %>%
+  summarize(across(flipper_length_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(bill_length_mm > 0) %>%
+  group_by(species) %>%
+  summarize(across(bill_length_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(bill_depth_mm > 0) %>%
+  group_by(species) %>%
+  summarize(across(bill_depth_mm, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+```{r}
+library(tidyverse)
+penguins %>%
+  filter(body_mass_g > 0) %>%
+  group_by(species) %>%
+  summarize(across(body_mass_g, list(mean = mean, median = median, sd = sd,   max = max, min = min)))
+```
+ANALYZING THE SUMMARIZATION :
+
+1.The flipper_length of Adelie is less than that of the average value i.e 200.9, where as Chinstrap is close to average and that of Gentoo is more than that of average value.
+
+2.The bill_length of Chinstrap and Gentoo is closer to that of average value i.e 43.9 mm and Adelie is less than that of average value.
+
+3.The bill_depth of Adelie and Chinstrap is close to the mean value 17.1 mm and that of Gentoo is less than that of mean value.
+
+4.The body_mass of Adelie and Chinstrap is less than of average 4201 g where as Gentoo is more than that of mean value.
+
+#SUMMARIZE
+```{r}
+library(skimr)
+skim(penguins)
+```
+# Difference between skimr and Manual data analyzing.
+1.The skimr allows us to analyse the missing values or NA values and gives mean and standard deviation value among all species without having to write another argument to omit NA values.
+2.This decreases redundant code and ease in code writing.
+3.It also gives histogram plots for all the skim variables.
+4. As summary also gives all of this information skim allows us to analyse the p0,p25 various points on histogram.
+
+# 4.a Data Visualization
+
+```{r}
+ggplot(penguins,aes(x = flipper_length_mm, y = body_mass_g)) + 
+geom_point()
+```
+#Summary 1
+
+1. Based on the above plot, we can deduce that penguins with flippers between 180 and 200 mm in length are likely to weigh between 3000 and 40000 grams.
+2. On average, penguins with 210mm flipper length weigh between 4,000 and 5,000 g.
+3. And penguins with flippers between 210 and 230mm in length weigh between 5000 and 6000g on average.
+
+By this we understand as the flipper length increases the body mass of the penguins also increases.
+```{r}
+ggplot(penguins,aes(x = bill_length_mm, y = body_mass_g)) + 
+geom_point()
+```
+#Summary2
+
+From the above plot on an average, there is high probability of penguins to have  bill length between 40 and 50mm and can have body mass between 4000 and 5000g.
+
+```{r}
+ggplot(penguins,aes(x = bill_depth_mm, y = body_mass_g)) + 
+geom_point()
+```
+#Summary3
+
+From the above plot we can analyse the body mass of penguins having bill depth between 17.5 and 20 is between 3000 and 4000g.
+
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar()
+```
+# Summary 4
+The count of species is depicted in the above graph 
+As seen, the Adelie species has the highest count and Chinstrap as the lowest.
+
+```{r}
+ggplot(penguins, aes(x = body_mass_g , fill = species)) +
+  geom_histogram(binwidth = 2000) +
+  labs(title = "Body mass of species")
+```
+# Summary 5
+On an average the penguins are likely to weigh between 3000 to 5000 grams.
+
+```{r}
+ggplot(data = penguins, mapping =aes(x = island, fill = species)) +
+  geom_bar()+
+  labs(title = "species in  islands")
+```
+
+# Summary
+
+1. Adelie species are present on all the 3 islands hence the probability of finding adelie is greater on all islands.
+2. Chinstrap is found on the dream island only and is also less in population.
+3. The Gentoo species is found on the Biscoe island only but has a higher population compared to the chinstrap.
+
+#4.b,c Appropriate labelling and coloring for better understanding.
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species, shape = species, na.rm = TRUE)) +
+  geom_smooth(method = "lm", na.rm = TRUE) +
+  labs(title = "Bill length and bill depth")
+```
+#Summary 6
+
+1.In the above plot the Adelie species having bill length between 35 to 45mm have bill depth ranging between 17.5 to 20 mm.
+2.Most of the gentoo species has bill depth less than 15mm.
+3.Chinstrap species around 50mm bill length has bill depth between 17.5 to 20mm.
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = bill_length_mm, y = flipper_length_mm)) +
+  geom_point(aes(color = species, shape = species, na.rm = TRUE)) +
+  geom_smooth(method = "lm", na.rm = TRUE) +
+  labs(title = "Bill length and flipper length")
+```
+#Summary 7
+1. The flipper length of Adelie and Chinstrap is less than that of gentoo.
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species, na.rm = TRUE)) +
+  geom_smooth(method = "lm", na.rm = TRUE) +
+  labs(title = "Body mass and flipper length")
+```
+#Summary 8
+1. Here from the above graph we can see that the Adelie and Chinstrap are co-related in terms of body mass and flipper length.
+2. Gentoo comparitively has larger body mass and flipper length
+
+```{r}
+ggplot(
+  data = penguins,
+  mapping = aes(x = bill_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species, na.rm = TRUE)) +
+  geom_smooth(method = "lm", na.rm = TRUE) +
+  labs(title = "Body mass and bill length")
+```
+#Summary 9
+1. The bill length and body mass of Gentoo is higher than that of Adelie and Chinstrap.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = bill_depth_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species, na.rm = TRUE)) +
+  geom_smooth(method = "lm", na.rm = TRUE) +
+  labs(title = "Body mass and bill depth")
+```
+#Summary 10
+1. The bill depth of Gentoo is less than that of other species.
+2. The bill depth of Adelie and Chinstrap is greater but has less body mass than gentoo.
+
+# 5.a,b Project Report and Interpretation
+
+Abstract:The main aim of the project is to study different penguin species i.e Gentoo, Adelie and Chinstrap. The features variation of body mass, flipper length, bill length and bill depth is to be analysed and visualized.
+
+Introduction: The palmer penguins data set is recorded in the antarctic environment. It focuses on Adelie, Chinstrap and gentoo widely distributed over the Biscoe, Dream and Torgersen islands. The features of penguins such as flipper length, bill length, bill depth, body mass, island, sex and year are recorded in the datase.
+
+The variables in the dataset include:
+
+1. Flipper_length_mm : Flipper length in mm
+
+2. Bill_length_mm    : Bill length in mm
+
+3. Bill_depth_mm     : Bill depth in mm
+
+4. Body_mass_g       : Body mass in grams
+
+5. Year              : Year in which data is recorded.
+
+6. Sex               : Gender of the penguins
+
+7. species           : Chinstrap, Gentoo and Adelie
+
+8. Island            : Dream,Biscoe and Torgersen
+
+Description:
+
+1.According to the Data Visualization plots visualized above, it can be understood that the Adelie and Gentoo are greater in number than Chinstrap. 
+
+2.On an average the penguins from all species are likely to weigh between 3000 to 5000 grams.
+
+3.The Gentoo species exhibits a higher variance than the Adelie and Chinstrap species.
+
+4.The bar garph shows that there is a relationship between species and island. The Adelie penguins are found on both islands, while the Gentoo and Chinstrap penguins are only found on one island each.
+
+5.Also,Gentoo has higher body mass and flipper length where as bill depth is lower than that of other species.From this,we can analyse that as Flipper length increases body mass of the Gentoo also increases.As such a linear variation is observed between the flipper length and body mass of the gentoo species
+
+6.Adelie and Chinstrap are co-related as observed in the plots of flipper length vs body mass. As observed in the above graphs Adelie and Chinstrap are found to have greater probability of similar range of flipper length as well as body mass.
+
+7.On an average both the bill length and bill depth of Chinstrap species are higher than Adelie and Gentoo.
+
+8.The Flipper length as well as Bill length of Adelie is comparatively less than others.
+
+9.Both Adelie as well as Chinstrap have higher bill depth and lower flipper length than gentoo.
+
+Installing required packages: In order to assist with data modification and visualization, we have used programs like tidyverse, skimr, and ggplot. Data cleaning and statistical calculations like mean, median, standard deviation, maximum, and minimum are done using tidyverse. In contrast, skimr provides the statistics without any extra arguments. By plotting graphs using varied graphs, thorough labeling, and different colors for variables, ggplot enables people to comprehend data.ggplot assists in drawing detailed graphs for analysis.
+
+Data loading: Data loading can be done from various files such as excel,csv files. R has a various collection of packages enabling users to perform various operations on the data. Also some of the default packages in R allow demo study and testing data interpretations.
+
+Data Summarizing: The functions such as filter,mutate,group by, summarize allow us to perform manipulative functions on data to gain deeper insights.
+
+Data Visualization:  By plotting graphs using varied graphs, thorough labeling, and different colors for variables, ggplot enables people to comprehend data.
+
+Conclusion: The required analysis and insights helps us understand the variation of features and species behavior. Ecologists can preserve endangered species with the use of this information. We can forecast future penguin populations using the gender distribution on various islands.
+
+# 5.c THE USE OF R and TIDYVERSE DATA PACKAGE IN DATA ANALYSIS
+
+1. R is an open-source programming language and can run on various platforms. R is comparatively used more than that of Python for data analysis and data visualization because of various range of packages and features.
+
+2. The tidyverse package includes the tidyr,dplyr,skimr,ggplot packages necessary for drawing plots to calculate variation or the co-relation between variables.
+
+3. The ggplot2 packages allows to draw graphs with different colors,shapes and detailed labelling for understanding the data effectively.
+
+4. The tidyr package is used for tidying the data using drop.na,fill and other functions.
+
+5. The dplyr package consists of various functions such as filter,mutate,select,arrange necessary to regulate data
+
+6. R has a readable code and is comparatively easy to write. It lessens the redundancy of code.
+
+7. R can also import and export data in various formats such as CSV, Excel files.
+
+8. Also the "skimr" in R allows us to calculate all the statistical data and allows to plot data all at once without writing other arguments.
+
+9. Different types of plots can be derived and easy analysis can be done from data visualization.
+
+10. Step by step analysis allows us to understand, clean, manipulate and plot data effectively.
+
+
